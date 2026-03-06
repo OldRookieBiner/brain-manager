@@ -1,0 +1,38 @@
+{
+  "name": "@openclaw/brain",
+  "version": "1.0.0",
+  "description": "Brain Manager for OpenClaw - auto-extract sessions, sync to SiYuan Note, intelligent knowledge retrieval",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "node --test",
+    "lint": "eslint .",
+    "install:skill": "node install.js",
+    "postinstall": "echo '✅ Brain Manager installed! Run `npm run install:skill` to set up.'"
+  },
+  "bin": {
+    "openclaw-brain-install": "./install.js"
+  },
+  "keywords": [
+    "openclaw",
+    "skill",
+    "brain",
+    "knowledge-management",
+    "siyuan-note",
+    "documentation",
+    "ai-assistant"
+  ],
+  "author": "OpenClaw Community",
+  "license": "MIT",
+  "dependencies": {
+    "@openclaw/tool": "^1.0.0",
+    "node-fetch": "^3.3.2",
+    "yaml": "^2.3.4"
+  },
+  "devDependencies": {
+    "eslint": "^8.56.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
