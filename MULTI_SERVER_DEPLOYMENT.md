@@ -41,9 +41,15 @@
 区域：ap-northeast-1
 存储桶：siyuan-knowledge-base
 路径：siyuan-data/
-Access Key: AKIAXXXXXXXXXXXXXXXX
-Secret Key: XXXXXXXXXXXXXXXXXXXXXXXXXXXX
+Access Key: AKIAXXXXXXXXXXXXXXXX  # 示例占位符，请替换为您的真实密钥
+Secret Key: XXXXXXXXXXXXXXXXXXXXXXXXXXXX  # 示例占位符，请替换为您的真实密钥
 ```
+
+⚠️ **安全警告**：
+- **请勿将真实密钥提交到版本控制系统！**
+- 建议使用环境变量或密钥管理服务（如 AWS Secrets Manager）
+- 定期轮换密钥
+- 限制密钥的访问权限（最小权限原则）
 
 4. 启用自动同步
    - ✅ 启动时自动同步

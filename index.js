@@ -12,6 +12,7 @@ import { KnowledgeRetriever } from "./lib/retriever.js";
 import { SiYuanSync } from "./lib/siyuan-sync.js";
 import { SmartDetector } from "./lib/smart-detector.js";
 import { CompressionDetector } from "./lib/compression-detector.js";
+import { IntelligentAnalyzer } from "./lib/intelligent-analyzer.js";
 
 // 初始化模块（支持多语言）
 const extractor = new KnowledgeExtractor({
@@ -28,6 +29,184 @@ const smartDetector = new SmartDetector({
   language: process.env.DEFAULT_LANGUAGE || 'zh'
 });
 const compressionDetector = new CompressionDetector();
+const analyzer = new IntelligentAnalyzer({
+  language: process.env.DEFAULT_LANGUAGE || 'zh'
+});
+
+/**
+ * 分析结果缓存（LRU 缓存，最多 100 条，10 分钟过期）
+ */
+const analysisCache = new Map();
+const CACHE_TTL = 10 * 60 * 1000; // 10 分钟
+const MAX_CACHE_SIZE = 100;
+
+/**
+ * 从缓存获取分析结果
+ */
+function getCachedAnalysis(cacheKey) {
+  const cached = analysisCache.get(cacheKey);
+  if (!cached) return null;
+  
+  // 检查是否过期
+  if (Date.now() - cached.timestamp > CACHE_TTL) {
+    analysisCache.delete(cacheKey);
+    return null;
+  }
+  
+  return cached.data;
+}
+
+/**
+ * 缓存分析结果
+ */
+function cacheAnalysisResult(cacheKey, data) {
+  // 如果缓存已满，删除最旧的条目
+  if (analysisCache.size >= MAX_CACHE_SIZE) {
+    const firstKey = analysisCache.keys().next().value;
+    analysisCache.delete(firstKey);
+  }
+  
+  analysisCache.set(cacheKey, {
+    data,
+    timestamp: Date.now()
+  });
+}
+
+/**
+ * 执行知识提炼流程
+ * 
+ * @param {string} title - 知识卡片标题
+ * @param {string} category - 知识分类（架构/模块/规范/问题/决策/教程）
+ * @param {Array} conversationHistory - 会话历史数组
+ * @param {boolean} syncToSiYuan - 是否同步到思源笔记（默认：true）
+ * @param {boolean} forceNew - 强制创建新文档，不检测相似文档（默认：false）
+ * @param {boolean} updateExisting - 强制更新已有文档（默认：false）
+ * @param {string} specifiedDocId - 指定的文档 ID（更新模式）
+ * @param {string} language - 输出语言（zh/en，默认自动检测）
+ * @param {Object} analysisResult - 智能分析结果（可选，智能模式时使用）
+ * @returns {Promise<Object>} 提炼结果对象
+ * 
+ * 返回结果包含：
+ * - success: 是否成功
+ * - action: 操作类型（created/updated）
+ * - title: 知识卡片标题
+ * - category: 知识分类
+ * - preview: 内容预览
+ * - sync: 思源同步结果
+ * - detection: 相似度检测结果
+ * - compressionRisk: 压缩风险信息
+ * - analysis: 智能分析结果（如果有）
+ */
+async function processExtraction({
+  title,
+  category,
+  conversationHistory,
+  syncToSiYuan = true,
+  forceNew = false,
+  updateExisting = false,
+  specifiedDocId = null,
+  language,
+  analysisResult = null
+}) {
+  // 压缩风险检测
+  const compressionRisk = await compressionDetector.detectRisk(conversationHistory);
+
+  // 智能检测：是否应该更新已有文档
+  let targetDocId = specifiedDocId;
+  let shouldUpdate = false;
+  let detectionResult = null;
+
+  if (!forceNew && !specifiedDocId) {
+    detectionResult = await smartDetector.shouldUpdateExisting(
+      title,
+      category,
+      conversationHistory,
+      retriever
+    );
+
+    if (detectionResult.action === 'auto_update' || updateExisting) {
+      shouldUpdate = true;
+      targetDocId = detectionResult.docId;
+    } else if (detectionResult.action === 'ask_user') {
+      // 返回建议给用户选择
+      return {
+        success: true,
+        action: 'ask_user',
+        message: `检测到 ${detectionResult.suggestions.length} 篇相似文章，请选择：`,
+        suggestions: detectionResult.suggestions.map(s => ({
+          title: s.title,
+          similarity: Math.round(s.similarity * 100) + '%',
+          action: `/knowledge_update --id "${s.docId}" --title "${title}" --category "${category}"`
+        })),
+        createNewAction: `/knowledge_summarize --title "${title}" --category "${category}" --force-new`
+      };
+    }
+  }
+
+  // 提炼知识（支持多语言）
+  const knowledgeCard = await extractor.extractCurrentConversation({
+    title,
+    category,
+    conversationHistory,
+    language
+  });
+
+  // 同步到思源笔记
+  let syncResult = null;
+  if (syncToSiYuan) {
+    try {
+      if (shouldUpdate && targetDocId) {
+        // 更新已有文档
+        syncResult = await siyuanSync.updateExistingDoc(
+          targetDocId,
+          knowledgeCard.content
+        );
+      } else {
+        // 创建新文档
+        syncResult = await siyuanSync.syncToNotebook(knowledgeCard);
+      }
+    } catch (syncError) {
+      console.error('思源笔记同步失败，但本地备份已保存:', syncError);
+      syncResult = {
+        success: false,
+        error: syncError.message,
+        localBackup: true
+      };
+    }
+  }
+
+  // 格式化返回结果
+  const result = {
+    success: true,
+    action: shouldUpdate ? 'updated' : 'created',
+    title: knowledgeCard.title,
+    category: knowledgeCard.category,
+    tags: knowledgeCard.tags,
+    createdAt: knowledgeCard.createdAt,
+    preview: knowledgeCard.content.substring(0, 500) + '...',
+    sync: syncResult,
+    detection: detectionResult ? {
+      similarity: Math.round(detectionResult.similarity * 100) + '%',
+      action: detectionResult.action
+    } : null,
+    // 压缩风险信息
+    compressionRisk: compressionRisk.riskLevel === 'critical' ? {
+      level: compressionRisk.riskLevel,
+      color: compressionRisk.color,
+      usageRate: compressionRisk.usageRate,
+      tokens: compressionRisk.tokens,
+      limit: compressionRisk.limit,
+      message: compressionRisk.suggestion
+    } : null,
+    // 智能分析结果（如果有）
+    analysis: analysisResult ? {
+      topics: analysisResult.data.topics,
+      recommendedAction: analysisResult.data.recommendedAction
+    } : null
+  };
+
+  return result;
+}
 
 // 辅助方法：从用户输入中提取检索关键词
 function extractQueryFromUserInput(userInput) {
@@ -98,7 +277,8 @@ export default {
               forceNew = false,
               updateExisting = false,
               docId: specifiedDocId,
-              language
+              language,
+              smart = false  // 智能模式参数
             } = args;
             
             // 获取会话历史（从 OpenClaw 上下文）
@@ -111,101 +291,217 @@ export default {
               };
             }
 
-            // 压缩风险检测（新增）
-            const compressionRisk = await compressionDetector.detectRisk(conversationHistory);
-
-            // 智能检测：是否应该更新已有文档
-            let targetDocId = specifiedDocId;
-            let shouldUpdate = false;
-            let detectionResult = null;
-
-            if (!forceNew && !specifiedDocId) {
-              detectionResult = await smartDetector.shouldUpdateExisting(
-                title,
-                category,
-                conversationHistory,
-                retriever
-              );
-
-              if (detectionResult.action === 'auto_update' || updateExisting) {
-                shouldUpdate = true;
-                targetDocId = detectionResult.docId;
-              } else if (detectionResult.action === 'ask_user') {
-                // 返回建议给用户选择
-                return {
+            // 智能模式：先分析会话内容
+            let analysisResult = null;
+            if (smart || !title) {
+              // 生成缓存键
+              const cacheKey = JSON.stringify({
+                conversationLength: conversationHistory.length,
+                firstMessage: conversationHistory[0]?.content?.substring(0, 50) || '',
+                lastMessage: conversationHistory[conversationHistory.length - 1]?.content?.substring(0, 50) || ''
+              });
+              
+              // 尝试从缓存获取
+              let cachedData = getCachedAnalysis(cacheKey);
+              
+              if (cachedData) {
+                console.log('使用缓存的分析结果');
+                analysisResult = {
                   success: true,
-                  action: 'ask_user',
-                  message: `检测到 ${detectionResult.suggestions.length} 篇相似文章，请选择：`,
-                  suggestions: detectionResult.suggestions.map(s => ({
-                    title: s.title,
-                    similarity: Math.round(s.similarity * 100) + '%',
-                    action: `/knowledge_update --id "${s.docId}" --title "${title}" --category "${category}"`
-                  })),
-                  createNewAction: `/knowledge_summarize --title "${title}" --category "${category}" --force-new`
+                  data: cachedData,
+                  language: cachedData.language || 'zh',
+                  fromCache: true
+                };
+              } else {
+                // 调用智能分析器
+                analysisResult = await analyzer.analyze(conversationHistory);
+                
+                if (!analysisResult.success) {
+                  // 分析失败，使用降级方案
+                  console.warn('智能分析失败，使用降级方案:', analysisResult.error);
+                  analysisResult = {
+                    success: true,
+                    data: analysisResult.fallback,
+                    language: 'zh'
+                  };
+                } else {
+                  // 缓存分析结果
+                  cacheAnalysisResult(cacheKey, {
+                    ...analysisResult.data,
+                    language: analysisResult.language
+                  });
+                }
+              }
+              
+              // 边界条件检查：话题列表为空
+              if (!analysisResult.data.topics || analysisResult.data.topics.length === 0) {
+                return {
+                  success: false,
+                  error: "AI 分析未检测到任何话题，请检查会话内容"
                 };
               }
+              
+              // 如果分析结果显示有多个话题，返回建议给用户选择
+              if (analysisResult.data.topics.length > 1 && analysisResult.data.recommendedAction === 'separate') {
+                // 生成缓存键用于并行提炼
+                const cacheKey = JSON.stringify({
+                  conversationLength: conversationHistory.length,
+                  firstMessage: conversationHistory[0]?.content?.substring(0, 50) || '',
+                  lastMessage: conversationHistory[conversationHistory.length - 1]?.content?.substring(0, 50) || ''
+                });
+                
+                return {
+                  success: true,
+                  action: 'multiple_topics_detected',
+                  message: `检测到 ${analysisResult.data.topics.length} 个独立话题，建议分别提炼`,
+                  analysis: analysisResult.data,
+                  displayText: analyzer.formatForDisplay(analysisResult.data, analysisResult.language),
+                  cacheKey: cacheKey,  // 缓存键用于并行提炼
+                  options: analysisResult.data.topics.map((topic, index) => {
+                    // 边界条件检查：消息范围
+                    const safeStart = Math.max(0, topic.messageRange?.start || 0);
+                    const safeEnd = Math.min(conversationHistory.length - 1, topic.messageRange?.end || conversationHistory.length - 1);
+                    
+                    return {
+                      topicId: topic.id,
+                      title: topic.titleSuggestions?.[0] || '未命名知识',
+                      category: topic.category,
+                      summary: topic.summary,
+                      messageRange: `${safeStart + 1}-${safeEnd + 1}`,
+                      action: `/knowledge_summarize --topic ${topic.id} --title "${topic.titleSuggestions?.[0] || '未命名知识'}" --category "${topic.category}"`
+                    };
+                  }),
+                  extractAllAction: `/extract-all --analysis-cache-key "${cacheKey}"`
+                };
+              }
+              
+              // 边界条件检查：标题建议为空
+              const firstTopic = analysisResult.data.topics[0];
+              if (!firstTopic.titleSuggestions || firstTopic.titleSuggestions.length === 0) {
+                firstTopic.titleSuggestions = ['未命名知识'];
+              }
+              
+              // 边界条件检查：分类为空
+              if (!firstTopic.category) {
+                firstTopic.category = '架构';
+              }
+              
+              // 如果用户没有提供标题，使用 AI 推荐的第一个标题
+              const autoTitle = !title ? firstTopic.titleSuggestions[0] : title;
+              const autoCategory = !category ? firstTopic.category : category;
+              
+              // 使用自动填充的标题和分类继续提炼
+              return await processExtraction({
+                title: autoTitle,
+                category: autoCategory,
+                conversationHistory,
+                syncToSiYuan,
+                forceNew,
+                updateExisting,
+                specifiedDocId,
+                language: language || analysisResult.language,
+                analysisResult
+              });
             }
-
-            // 提炼知识（支持多语言）
-            const knowledgeCard = await extractor.extractCurrentConversation({
+            
+            // 非智能模式：直接提炼（保持原有逻辑）
+            return await processExtraction({
               title,
               category,
               conversationHistory,
-              language  // 传递语言参数
+              syncToSiYuan,
+              forceNew,
+              updateExisting,
+              specifiedDocId,
+              language,
+              analysisResult: null
             });
-
-            // 同步到思源笔记
-            let syncResult = null;
-            if (syncToSiYuan) {
-              try {
-                if (shouldUpdate && targetDocId) {
-                  // 更新已有文档
-                  syncResult = await siyuanSync.updateExistingDoc(
-                    targetDocId,
-                    knowledgeCard.content
-                  );
-                } else {
-                  // 创建新文档
-                  syncResult = await siyuanSync.syncToNotebook(knowledgeCard);
-                }
-              } catch (syncError) {
-                console.error('思源笔记同步失败，但本地备份已保存:', syncError);
-                syncResult = {
-                  success: false,
-                  error: syncError.message,
-                  localBackup: true
-                };
-              }
-            }
-
-            // 格式化返回结果
-            const result = {
-              success: true,
-              action: shouldUpdate ? 'updated' : 'created',
-              title: knowledgeCard.title,
-              category: knowledgeCard.category,
-              tags: knowledgeCard.tags,
-              createdAt: knowledgeCard.createdAt,
-              preview: knowledgeCard.content.substring(0, 500) + '...',
-              sync: syncResult,
-              detection: detectionResult ? {
-                similarity: Math.round(detectionResult.similarity * 100) + '%',
-                action: detectionResult.action
-              } : null,
-              // 压缩风险信息（新增）
-              compressionRisk: compressionRisk.riskLevel === 'critical' ? {
-                level: compressionRisk.riskLevel,
-                color: compressionRisk.color,
-                usageRate: compressionRisk.usageRate,
-                tokens: compressionRisk.tokens,
-                limit: compressionRisk.limit,
-                message: compressionRisk.suggestion
-              } : null
-            };
-
-            return result;
           } catch (error) {
             console.error('知识提炼失败:', error);
+            return {
+              success: false,
+              error: error.message
+            };
+          }
+        }
+      }),
+
+      /**
+       * 工具 1.5: extract-all - 并行提炼所有话题
+       * 并行提炼所有检测到的话题（多话题场景）
+       */
+      new Tool({
+        name: "extract-all",
+        description: "并行提炼所有检测到的话题（多话题场景）/ Extract all topics in parallel",
+        parameters: {
+          analysisCacheKey: {
+            type: "string",
+            description: "分析结果的缓存键 / Cache key for analysis results",
+            required: true
+          }
+        },
+        execute: async (toolCallId, args) => {
+          try {
+            const { analysisCacheKey } = args;
+            
+            // 从缓存获取分析结果
+            const cachedData = getCachedAnalysis(analysisCacheKey);
+            if (!cachedData) {
+              return {
+                success: false,
+                error: "分析结果已过期，请重新分析 / Analysis results expired, please re-analyze"
+              };
+            }
+            
+            const topics = cachedData.topics;
+            const language = cachedData.language || 'zh';
+            
+            // 并行提炼所有话题
+            const extractPromises = topics.map(async (topic) => {
+              // 边界条件检查：消息范围
+              const safeStart = Math.max(0, topic.messageRange?.start || 0);
+              const safeEnd = Math.min(conversationHistory.length - 1, topic.messageRange?.end || conversationHistory.length - 1);
+              
+              // 提取该话题的会话历史
+              const topicHistory = conversationHistory.slice(safeStart, safeEnd + 1);
+              
+              // 边界条件检查：标题和分类
+              const topicTitle = topic.titleSuggestions?.[0] || '未命名知识';
+              const topicCategory = topic.category || '架构';
+              
+              // 执行提炼
+              return await processExtraction({
+                title: topicTitle,
+                category: topicCategory,
+                conversationHistory: topicHistory,
+                syncToSiYuan: true,
+                forceNew: true,  // 多话题时强制创建新文档
+                updateExisting: false,
+                specifiedDocId: null,
+                language: language,
+                analysisResult: null
+              });
+            });
+            
+            // 等待所有提炼完成
+            const results = await Promise.all(extractPromises);
+            
+            return {
+              success: true,
+              action: 'extract_all_completed',
+              message: `成功提炼 ${results.length} 个话题 / Successfully extracted ${results.length} topics`,
+              results: results.map((result, index) => ({
+                topicId: topics[index].id,
+                title: result.title,
+                category: result.category,
+                action: result.action,
+                preview: result.preview?.substring(0, 100) + '...'
+              })),
+              totalTopics: topics.length,
+              successfulExtractions: results.filter(r => r.success).length
+            };
+          } catch (error) {
+            console.error('并行提炼失败:', error);
             return {
               success: false,
               error: error.message

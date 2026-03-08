@@ -1,17 +1,22 @@
-refactor: simplify i18n to support only Chinese and English
+fix: improve language detection logic - any Chinese character means Chinese
 
-Changes:
-- Removed Japanese and Korean language support
-- Simplified language detection logic (only Chinese vs English)
-- Updated i18n module to only include zh and en prompts
-- Updated index.js to only accept zh/en language parameters
-- Updated documentation to reflect bilingual support only
+Breaking Change:
+- Changed language detection from "20% threshold" to "any Chinese character"
+- Previous logic: chineseRatio > 0.2 → Chinese
+- New logic: chineseCount > 0 → Chinese
 
-Reason:
-- Focus on most commonly used languages
-- Reduce code complexity and maintenance burden
-- Keep the codebase lean and maintainable
+Rationale:
+- Technical documents in Chinese often contain English terminology
+- Examples: "Python 爬虫", "HTTP 请求", "API 设计" are all Chinese documents
+- If user includes any Chinese character, they likely want Chinese output
+- More intuitive and user-friendly behavior
 
-Supported languages:
-- zh (中文)
-- en (English)
+Examples:
+- "Crawler 引擎" → Chinese (was English with 20% threshold)
+- "Python 爬虫" → Chinese ✓
+- "HTTP 请求优化" → Chinese ✓
+- "Pure English Title" → English ✓
+
+Files Changed:
+- lib/i18n.js: Simplified detectLanguage() function
+- MULTILINGUAL.md: Updated documentation

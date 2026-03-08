@@ -11,9 +11,39 @@ Brain Manager 现已支持多语言！/ Brain Manager now supports multiple lang
 
 ## 🚀 使用方法 / Usage
 
-### 方式 1：自动检测（推荐）/ Automatic Detection (Recommended)
+### 方式 1：智能模式（推荐）/ Smart Mode (Recommended)
 
-系统会自动检测标题的语言并使用相应的语言输出：
+系统自动分析会话内容，生成标题建议和分类推荐：
+
+```bash
+# 智能模式：AI 自动生成标题和分类
+/knowledge_summarize --smart
+
+# 或者直接调用（不提供标题时自动使用智能模式）
+/knowledge_summarize
+```
+
+**智能模式特点：**
+- ✅ AI 自动检测话题数量（单话题/多话题）
+- ✅ 自动生成 3 个标题建议
+- ✅ 自动推荐知识分类
+- ✅ 自动提取关键词
+- ✅ 支持多话题分别提炼
+
+**智能模式流程：**
+```
+1. AI 分析会话内容（第 1 次调用）
+   ↓
+2. 展示分析结果给用户确认
+   ↓
+3. 用户确认后提炼知识（第 2 次调用）
+   ↓
+4. 保存到思源笔记
+```
+
+### 方式 2：手动指定标题和分类 / Manual Mode
+
+用户自己提供标题和分类：
 
 ```bash
 # 中文标题 - 输出中文文档
@@ -23,7 +53,7 @@ Brain Manager 现已支持多语言！/ Brain Manager now supports multiple lang
 /knowledge_summarize --title "Crawler Engine Architecture" --category "Architecture"
 ```
 
-### 方式 2：手动指定语言 / Manual Language Specification
+### 方式 3：手动指定语言 / Manual Language Specification
 
 强制使用特定语言输出：
 
@@ -35,7 +65,7 @@ Brain Manager 现已支持多语言！/ Brain Manager now supports multiple lang
 /knowledge_summarize --title "Crawler Engine Architecture" --category "Architecture" --lang zh
 ```
 
-### 方式 3：配置默认语言 / Configure Default Language
+### 方式 4：配置默认语言 / Configure Default Language
 
 在 `.env` 文件中设置默认语言：
 
