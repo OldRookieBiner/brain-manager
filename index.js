@@ -2,6 +2,8 @@
  * OpenClaw Brain Manager
  * 
  * 大脑管家 - 自动提炼会话内容、同步思源笔记、智能检索知识库
+ * 
+ * 支持多语言：中文、英文、日文、韩文
  */
 
 import { Tool } from "@openclaw/tool";
@@ -11,8 +13,10 @@ import { SiYuanSync } from "./lib/siyuan-sync.js";
 import { SmartDetector } from "./lib/smart-detector.js";
 import { CompressionDetector } from "./lib/compression-detector.js";
 
-// 初始化模块
-const extractor = new KnowledgeExtractor();
+// 初始化模块（支持多语言）
+const extractor = new KnowledgeExtractor({
+  language: process.env.DEFAULT_LANGUAGE || 'zh'
+});
 const retriever = new KnowledgeRetriever({
   notebookName: process.env.SIYUAN_NOTEBOOK_NAME,
   readOnlyNotebooks: process.env.SIYUAN_READ_ONLY_NOTEBOOKS
@@ -20,7 +24,9 @@ const retriever = new KnowledgeRetriever({
 const siyuanSync = new SiYuanSync({
   notebookName: process.env.SIYUAN_NOTEBOOK_NAME
 });
-const smartDetector = new SmartDetector();
+const smartDetector = new SmartDetector({
+  language: process.env.DEFAULT_LANGUAGE || 'zh'
+});
 const compressionDetector = new CompressionDetector();
 
 // 辅助方法：从用户输入中提取检索关键词
@@ -61,20 +67,26 @@ export default {
         parameters: {
           title: {
             type: "string",
-            description: "知识卡片标题，例如：'爬虫引擎架构设计'",
+            description: "知识卡片标题，例如：'爬虫引擎架构设计' / Title for knowledge card",
             required: true
           },
           category: {
             type: "string",
-            description: "知识分类",
+            description: "知识分类 / Category",
             enum: ["架构", "模块", "规范", "问题", "决策", "教程"],
             required: true
           },
           syncToSiYuan: {
             type: "boolean",
-            description: "是否同步到思源笔记（默认：true）",
+            description: "是否同步到思源笔记（默认：true）/ Sync to SiYuan Notes",
             required: false,
             default: true
+          },
+          language: {
+            type: "string",
+            description: "输出语言（zh/en/ja/ko，默认自动检测）/ Output language",
+            enum: ["zh", "en", "ja", "ko"],
+            required: false
           }
         },
         execute: async (toolCallId, args) => {
@@ -85,7 +97,8 @@ export default {
               syncToSiYuan = true,
               forceNew = false,
               updateExisting = false,
-              docId: specifiedDocId
+              docId: specifiedDocId,
+              language
             } = args;
             
             // 获取会话历史（从 OpenClaw 上下文）
@@ -133,11 +146,12 @@ export default {
               }
             }
 
-            // 提炼知识
+            // 提炼知识（支持多语言）
             const knowledgeCard = await extractor.extractCurrentConversation({
               title,
               category,
-              conversationHistory
+              conversationHistory,
+              language  // 传递语言参数
             });
 
             // 同步到思源笔记
