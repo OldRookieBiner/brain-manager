@@ -17,32 +17,19 @@ git add .
 echo.
 
 echo 步骤 3: 提交代码...
-git commit -m "feat: OpenClaw Knowledge Skill v1.0.0
+git commit -m "feat: add compression risk detection and enhanced smart detection
 
-Core Features:
-- Session summarization: Auto-generate structured knowledge cards
-- Knowledge retrieval: Intelligent search local and SiYuan notes
-- SiYuan sync: Seamless synchronization to SiYuan Notes
-- Notebook management: Dedicated notebook + read-only sharing
+New Features:
+- Compression Risk Detection: Monitor context usage from openclaw.json
+- Enhanced Smart Detection: Semantic analysis via OpenClaw API
+- Triple judgment: keyword(40%) + semantic(40%) + title(20%)
+- Zero API calls for compression detection (pure local calculation)
+- Priority-based config file search (home dir > current > parent)
 
-v2.0 New Features:
-- Human-readable articles: Generate publishable technical documentation
-- Smart detection: Auto-update if similarity >80%, ask user if 50-80%
-- Smart suggestions: Keyword-triggered retrieval suggestions
-- Permission control: Pre-write validation to prevent mistakes
-- Multi-notebook support: Search multiple read-only notebooks
-
-Technical Improvements:
-- Optimized extraction prompts for human readability
-- Implemented SmartDetector for intelligent decisions
-- Enhanced permission validation mechanism
-- Support for multi-server independent deployment
-
-Complete Documentation:
-- Comprehensive usage guides and configuration
-- Multi-server deployment guide
-- Intelligent extraction strategy
-- Publishing guide for ClawHub
+Files Changed:
+- lib/compression-detector.js (new)
+- lib/smart-detector.js (modified)
+- index.js (integrated new features)
 "
 echo.
 

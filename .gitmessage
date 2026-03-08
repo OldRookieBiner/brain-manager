@@ -1,0 +1,13 @@
+feat: add compression risk detection and enhanced smart detection
+
+New Features:
+- Compression Risk Detection: Monitor context usage from openclaw.json
+- Enhanced Smart Detection: Semantic analysis via OpenClaw API
+- Triple judgment: keyword(40%) + semantic(40%) + title(20%)
+- Zero API calls for compression detection (pure local calculation)
+- Priority-based config file search (home dir > current > parent)
+
+Files Changed:
+- lib/compression-detector.js (new)
+- lib/smart-detector.js (modified)
+- index.js (integrated new features)
