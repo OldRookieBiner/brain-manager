@@ -6,7 +6,7 @@ author: OpenClaw Community
 keywords: 大脑，知识管理，思源笔记，会话总结，知识库，提炼，检索，AI 助手
 ---
 
-# OpenClaw Knowledge Skill
+# Brain Manager
 
 这是一个强大的知识管理插件，帮助 OpenClaw 自动整理对话内容，构建个人知识库。
 

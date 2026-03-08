@@ -34,18 +34,18 @@
 ### 方式 1：从 ClawHub 安装（推荐）
 
 ```bash
-clawhub install knowledge
+clawhub install brain
 ```
 
 ### 方式 2：本地安装
 
 ```bash
 # 克隆或下载本仓库
-git clone https://github.com/your-repo/openclaw-knowledge.git
+git clone https://github.com/your-repo/brain-manager.git
 
 # 复制到 OpenClaw skills 目录
-cp -r openclaw-knowledge ~/.openclaw/workspace/skills/knowledge
-
+cp -r brain-manager ~/.openclaw/workspace/skills/brain
+```
 # 重启 OpenClaw Gateway
 openclaw gateway restart
 ```
@@ -311,12 +311,14 @@ OpenClaw: 📄 知识卡片：爬虫引擎架构设计
 ## 🏗️ 架构设计
 
 ```
-openclaw-knowledge/
-├── index.js                  # Skill 主入口，定义 4 个工具
+brain-manager/
+├── index.js                  # Skill 主入口，定义 5 个工具
 ├── lib/
 │   ├── extractor.js          # 会话提炼器（LLM 调用）
 │   ├── retriever.js          # 知识检索器（全文检索）
-│   └── siyuan-sync.js        # 思源同步器（API 集成）
+│   ├── siyuan-sync.js        # 思源同步器（API 集成）
+│   ├── smart-detector.js     # 智能检测器（语义分析）
+│   └── compression-detector.js # 压缩风险检测（上下文监控）
 ├── package.json              # 依赖和版本
 ├── SKILL.md                  # Skill 元信息
 └── README.md                 # 本文档
@@ -349,9 +351,9 @@ OpenClaw 会话
 
 ```bash
 # 1. 克隆仓库
-git clone https://github.com/your-repo/openclaw-knowledge.git
-cd openclaw-knowledge
-
+git clone https://github.com/your-repo/brain-manager.git
+cd brain-manager
+```
 # 2. 安装依赖
 npm install
 

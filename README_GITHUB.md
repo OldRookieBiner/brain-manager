@@ -1,13 +1,13 @@
 <div align="center">
 
-# 📚 OpenClaw Knowledge Skill
+# 📚 Brain Manager
 
 **智能知识管理插件** - 自动提炼会话内容、同步思源笔记、智能检索知识库
 
-[![Version](https://img.shields.io/npm/v/@openclaw/knowledge)](https://www.npmjs.com/package/@openclaw/knowledge)
-[![License](https://img.shields.io/npm/l/@openclaw/knowledge)](LICENSE)
-[![Node](https://img.shields.io/node/v/@openclaw/knowledge)](https://nodejs.org)
-[![ClawHub](https://img.shields.io/badge/ClawHub-published-blue)](https://clawhub.ai/skills/knowledge)
+[![Version](https://img.shields.io/npm/v/@openclaw/brain)](https://www.npmjs.com/package/@openclaw/brain)
+[![License](https://img.shields.io/npm/l/@openclaw/brain)](LICENSE)
+[![Node](https://img.shields.io/node/v/@openclaw/brain)](https://nodejs.org)
+[![ClawHub](https://img.shields.io/badge/ClawHub-published-blue)](https://clawhub.ai/skills/brain)
 
 [English](README_EN.md) | [简体中文](README.md)
 
@@ -37,11 +37,11 @@
 
 ```bash
 # 方式 1: 从 ClawHub 安装（推荐）
-clawhub install knowledge
+clawhub install brain
 
 # 方式 2: 本地安装
-git clone https://github.com/YOUR_USERNAME/openclaw-knowledge.git
-cd openclaw-knowledge
+git clone https://github.com/YOUR_USERNAME/brain-manager.git
+cd brain-manager
 npm install
 npm run install:skill
 ```
@@ -173,13 +173,14 @@ SIYUAN_READ_ONLY_NOTEBOOKS=项目管理，技术文档
 
 ```
 ┌─────────────────────────────────────┐
-│     OpenClaw Knowledge Skill        │
+│         Brain Manager               │
 ├─────────────────────────────────────┤
-│  4 个核心工具                        │
+│  5 个核心工具                        │
 │  - knowledge_summarize              │
 │  - knowledge_search                 │
 │  - knowledge_list                   │
 │  - knowledge_get                    │
+│  - knowledge_suggest                │
 ├─────────────────────────────────────┤
 │  3 个核心模块                        │
 │  - KnowledgeExtractor (提炼器)      │
@@ -220,8 +221,8 @@ SIYUAN_READ_ONLY_NOTEBOOKS=项目管理，技术文档
 
 ```bash
 # 克隆仓库
-git clone https://github.com/YOUR_USERNAME/openclaw-knowledge.git
-cd openclaw-knowledge
+git clone https://github.com/YOUR_USERNAME/brain-manager.git
+cd brain-manager
 
 # 安装依赖
 npm install
@@ -282,8 +283,8 @@ MIT License - 详见 [LICENSE](LICENSE) 文件
 
 - **作者**: Your Name
 - **邮箱**: your.email@example.com
-- **GitHub**: https://github.com/YOUR_USERNAME
-- **Issues**: https://github.com/YOUR_USERNAME/openclaw-knowledge/issues
+- **GitHub**: https://github.com/YOUR_USERNAME/brain-manager
+- **Issues**: https://github.com/YOUR_USERNAME/brain-manager/issues
 
 ---
 

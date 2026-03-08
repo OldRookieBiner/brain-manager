@@ -1,8 +1,8 @@
-# OpenClaw Knowledge Skill v1.0.0 - 优化总结
+# Brain Manager v1.0.0 - 优化总结
 
 ## 🎉 优化完成！
 
-本次优化实现了 5 个核心功能，大幅提升了 Knowledge Skill 的智能化水平和用户体验。
+本次优化实现了 5 个核心功能，大幅提升了 Brain Manager 的智能化水平和用户体验。
 
 **发布版本**: v1.0.0（2026-03-06）
 
@@ -75,7 +75,7 @@
 
 ### 实现位置
 
-- **文件**: [`lib/extractor.js`](file://e:\Python\heimingdan\openclaw-knowledge\lib\extractor.js)
+- **文件**: [`lib/extractor.js`](file://e:\Python\heimingdan\brain-manager\lib\extractor.js)
 - **方法**: `getSystemPrompt()`, `buildExtractionPrompt()`
 
 ### 关键改进
@@ -122,7 +122,7 @@ SIYUAN_READ_ONLY_NOTEBOOKS=项目管理，技术文档，团队知识库
 
 ### 实现位置
 
-- **文件**: [`lib/retriever.js`](file://e:\Python\heimingdan\openclaw-knowledge\lib\retriever.js), [`lib/siyuan-sync.js`](file://e:\Python\heimingdan\openclaw-knowledge\lib\siyuan-sync.js)
+- **文件**: [`lib/retriever.js`](file://e:\Python\heimingdan\brain-manager\lib\retriever.js), [`lib/siyuan-sync.js`](file://e:\Python\heimingdan\brain-manager\lib\siyuan-sync.js)
 - **类**: `KnowledgeRetriever`, `SiYuanSync`
 
 ### 使用方法
@@ -175,7 +175,7 @@ async validateWritePermission(notebookName) {
 
 ### 实现位置
 
-- **文件**: [`lib/siyuan-sync.js`](file://e:\Python\heimingdan\openclaw-knowledge\lib\siyuan-sync.js)
+- **文件**: [`lib/siyuan-sync.js`](file://e:\Python\heimingdan\brain-manager\lib\siyuan-sync.js)
 - **方法**: `validateWritePermission()`, `syncToNotebook()`
 
 ### 错误示例
@@ -251,8 +251,8 @@ calculateSimilarity(keywords, text) {
 
 ### 实现位置
 
-- **文件**: [`lib/smart-detector.js`](file://e:\Python\heimingdan\openclaw-knowledge\lib\smart-detector.js)（新增）
-- **文件**: [`index.js`](file://e:\Python\heimingdan\openclaw-knowledge\index.js)
+- **文件**: [`lib/smart-detector.js`](file://e:\Python\heimingdan\brain-manager\lib\smart-detector.js)（新增）
+- **文件**: [`index.js`](file://e:\Python\heimingdan\brain-manager\index.js)
 - **类**: `SmartDetector`
 
 ### 新增参数
@@ -316,7 +316,7 @@ const knowledgeKeywords = [
 
 ### 实现位置
 
-- **文件**: [`index.js`](file://e:\Python\heimingdan\openclaw-knowledge\index.js)
+- **文件**: [`index.js`](file://e:\Python\heimingdan\brain-manager\index.js)
 - **工具**: `knowledge_suggest`
 - **方法**: `extractQueryFromUserInput()`
 
@@ -488,10 +488,10 @@ SIYUAN_READ_ONLY_NOTEBOOKS=项目管理，技术文档
 
 ## 📚 相关文档
 
-- [README.md](file://e:\Python\heimingdan\openclaw-knowledge\README.md) - 完整使用文档
-- [CONFIG.md](file://e:\Python\heimingdan\openclaw-knowledge\CONFIG.md) - 配置指南
-- [INTELLIGENT_EXTRACTION_STRATEGY.md](file://e:\Python\heimingdan\openclaw-knowledge\INTELLIGENT_EXTRACTION_STRATEGY.md) - 智能提炼策略
-- [MULTI_SERVER_DEPLOYMENT.md](file://e:\Python\heimingdan\openclaw-knowledge\MULTI_SERVER_DEPLOYMENT.md) - 多服务器部署
+- [README.md](file://e:\Python\heimingdan\brain-manager\README.md) - 完整使用文档
+- [CONFIG.md](file://e:\Python\heimingdan\brain-manager\CONFIG.md) - 配置指南
+- [INTELLIGENT_EXTRACTION_STRATEGY.md](file://e:\Python\heimingdan\brain-manager\INTELLIGENT_EXTRACTION_STRATEGY.md) - 智能提炼策略
+- [MULTI_SERVER_DEPLOYMENT.md](file://e:\Python\heimingdan\brain-manager\MULTI_SERVER_DEPLOYMENT.md) - 多服务器部署
 
 ---
 

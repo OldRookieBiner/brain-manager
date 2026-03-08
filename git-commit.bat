@@ -2,7 +2,7 @@
 REM GitHub 提交脚本
 
 echo ========================================
-echo OpenClaw Knowledge Skill - GitHub 提交
+echo Brain Manager - GitHub 提交
 echo ========================================
 echo.
 
@@ -44,7 +44,7 @@ echo.
 echo 下一步：
 echo 1. 在 GitHub 创建新仓库
 echo 2. 运行以下命令：
-echo    git remote add origin https://github.com/YOUR_USERNAME/openclaw-knowledge.git
+echo    git remote add origin https://github.com/YOUR_USERNAME/brain-manager.git
 echo    git branch -M main
 echo    git push -u origin main
 echo.
