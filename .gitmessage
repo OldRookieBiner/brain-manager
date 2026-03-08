@@ -1,13 +1,14 @@
-feat: add compression risk detection and enhanced smart detection
+docs: update project name from openclaw-knowledge to brain-manager
 
-New Features:
-- Compression Risk Detection: Monitor context usage from openclaw.json
-- Enhanced Smart Detection: Semantic analysis via OpenClaw API
-- Triple judgment: keyword(40%) + semantic(40%) + title(20%)
-- Zero API calls for compression detection (pure local calculation)
-- Priority-based config file search (home dir > current > parent)
+Updated References:
+- README_GITHUB.md: Changed project name and repository URLs
+- README.md: Updated installation instructions and repository paths
+- SKILL.md: Updated project title
+- OPTIMIZATION_SUMMARY.md: Updated file paths and project references
+- git-commit.bat: Updated repository URL template
 
-Files Changed:
-- lib/compression-detector.js (new)
-- lib/smart-detector.js (modified)
-- index.js (integrated new features)
+Changes:
+- Replaced "OpenClaw Knowledge Skill" with "Brain Manager"
+- Changed repository URL from openclaw-knowledge to brain-manager
+- Updated file paths in documentation
+- Changed npm package name from @openclaw/knowledge to @openclaw/brain
