@@ -9,6 +9,7 @@ import { KnowledgeExtractor } from "./lib/extractor.js";
 import { KnowledgeRetriever } from "./lib/retriever.js";
 import { SiYuanSync } from "./lib/siyuan-sync.js";
 import { SmartDetector } from "./lib/smart-detector.js";
+import { CompressionDetector } from "./lib/compression-detector.js";
 
 // 初始化模块
 const extractor = new KnowledgeExtractor();
@@ -20,6 +21,7 @@ const siyuanSync = new SiYuanSync({
   notebookName: process.env.SIYUAN_NOTEBOOK_NAME
 });
 const smartDetector = new SmartDetector();
+const compressionDetector = new CompressionDetector();
 
 // 辅助方法：从用户输入中提取检索关键词
 function extractQueryFromUserInput(userInput) {
@@ -95,6 +97,9 @@ export default {
                 error: "当前会话为空，无法提炼知识"
               };
             }
+
+            // 压缩风险检测（新增）
+            const compressionRisk = await compressionDetector.detectRisk(conversationHistory);
 
             // 智能检测：是否应该更新已有文档
             let targetDocId = specifiedDocId;
@@ -172,6 +177,15 @@ export default {
               detection: detectionResult ? {
                 similarity: Math.round(detectionResult.similarity * 100) + '%',
                 action: detectionResult.action
+              } : null,
+              // 压缩风险信息（新增）
+              compressionRisk: compressionRisk.riskLevel === 'critical' ? {
+                level: compressionRisk.riskLevel,
+                color: compressionRisk.color,
+                usageRate: compressionRisk.usageRate,
+                tokens: compressionRisk.tokens,
+                limit: compressionRisk.limit,
+                message: compressionRisk.suggestion
               } : null
             };
 
