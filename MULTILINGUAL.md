@@ -8,8 +8,6 @@ Brain Manager 现已支持多语言！/ Brain Manager now supports multiple lang
 |---------|---------|---------------|
 | `zh` | 中文 | Chinese |
 | `en` | English | English |
-| `ja` | 日本語 | Japanese |
-| `ko` | 한국어 | Korean |
 
 ## 🚀 使用方法 / Usage
 
@@ -23,12 +21,6 @@ Brain Manager 现已支持多语言！/ Brain Manager now supports multiple lang
 
 # 英文标题 - 输出英文文档
 /knowledge_summarize --title "Crawler Engine Architecture" --category "Architecture"
-
-# 日文标题 - 输出日文文档
-/knowledge_summarize --title "クローラーエンジン設計" --category "アーキテクチャ"
-
-# 韩文标题 - 输出韩文文档
-/knowledge_summarize --title "크롤러 엔진 설계" --category "아키텍처"
 ```
 
 ### 方式 2：手动指定语言 / Manual Language Specification
@@ -58,13 +50,11 @@ DEFAULT_LANGUAGE=en  # 默认使用英文
 
 系统会自动分析标题中的字符特征：
 - 中文字符比例 > 20% → 中文
-- 日文字符（平假名/片假名）比例 > 30% → 日文
-- 韩文字符比例 > 30% → 韩文
 - 其他情况 → 英文
 
 ### 2. 多语言提示词系统 / Multilingual Prompt System
 
-所有 AI 提示词都已翻译成 4 种语言：
+所有 AI 提示词都已翻译成 2 种语言：
 - ✅ 系统提示词（System Prompt）
 - ✅ 提炼提示词（Extraction Prompt）
 - ✅ 语义分析提示词（Semantic Analysis Prompt）
@@ -122,42 +112,6 @@ DEFAULT_LANGUAGE=en  # 默认使用英文
 ## 📋 Background
 In large-scale data collection scenarios...
 ```
-
-### 日本語の例
-
-```markdown
-# クローラーエンジン設計
-
-> **概要**：本文書は aiohttp に基づく高性能クローラーエンジンの設計を記録しています...
-
-## 📋 背景
-大規模データ収集シナリオにおいて...
-```
-
-### 한국어 예시
-
-```markdown
-# 크롤러 엔진 설계
-
-> **요약**: 이 문서는 aiohttp 기반 고성능 크롤러 엔진의 설계를 기록합니다...
-
-## 📋 배경
-대규모 데이터 수집 시나리오에서...
-```
-
-## 🎯 最佳实践 / Best Practices
-
-1. **标题使用目标语言** / Use Target Language for Titles
-   - 想生成英文文档 → 使用英文标题
-   - 想生成中文文档 → 使用中文标题
-
-2. **混合语言场景** / Mixed Language Scenarios
-   - 如果会话中包含多种语言，建议手动指定 `--lang` 参数
-   - 系统会以主要语言为准生成文档
-
-3. **技术术语** / Technical Terms
-   - 即使是非英文文档，技术术语也建议使用英文
-   - 例如：使用 "API" 而不是翻译
 
 ## 🔮 未来计划 / Future Plans
 

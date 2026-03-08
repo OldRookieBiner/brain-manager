@@ -84,8 +84,8 @@ export default {
           },
           language: {
             type: "string",
-            description: "输出语言（zh/en/ja/ko，默认自动检测）/ Output language",
-            enum: ["zh", "en", "ja", "ko"],
+            description: "输出语言（zh/en，默认自动检测）/ Output language",
+            enum: ["zh", "en"],
             required: false
           }
         },

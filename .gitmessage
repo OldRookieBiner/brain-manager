@@ -1,14 +1,21 @@
-docs: update project name from openclaw-knowledge to brain-manager
+feat: add multilingual support (i18n)
 
-Updated References:
-- README_GITHUB.md: Changed project name and repository URLs
-- README.md: Updated installation instructions and repository paths
-- SKILL.md: Updated project title
-- OPTIMIZATION_SUMMARY.md: Updated file paths and project references
-- git-commit.bat: Updated repository URL template
+New Features:
+- Complete i18n system with support for Chinese, English, Japanese, Korean
+- Automatic language detection based on title text analysis
+- Manual language override via --lang parameter
+- Multilingual prompts for extraction and semantic analysis
+- Language-aware error messages
 
 Changes:
-- Replaced "OpenClaw Knowledge Skill" with "Brain Manager"
-- Changed repository URL from openclaw-knowledge to brain-manager
-- Updated file paths in documentation
-- Changed npm package name from @openclaw/knowledge to @openclaw/brain
+- lib/i18n.js (new) - Internationalization module with prompt templates
+- lib/extractor.js - Updated to use i18n prompts
+- lib/smart-detector.js - Updated semantic analysis for multilingual
+- index.js - Added --lang parameter to knowledge_summarize tool
+- .env.example - Added DEFAULT_LANGUAGE configuration
+- MULTILINGUAL.md (new) - Comprehensive multilingual usage guide
+
+Usage:
+- Auto-detect: /knowledge_summarize --title "Your Title" --category "Category"
+- Manual: /knowledge_summarize --title "标题" --category "架构" --lang en
+- Config: Set DEFAULT_LANGUAGE=en in .env
