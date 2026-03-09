@@ -3,7 +3,7 @@
  * 
  * 大脑管家 - 自动提炼会话内容、同步思源笔记、智能检索知识库
  * 
- * 支持多语言：中文、英文、日文、韩文
+ * 支持多语言：中文、英文
  */
 
 import { Tool } from "@openclaw/tool";
@@ -41,6 +41,13 @@ const CACHE_TTL = 10 * 60 * 1000; // 10 分钟
 const MAX_CACHE_SIZE = 100;
 
 /**
+ * 相似文档检测缓存（LRU 缓存，最多 50 条，5 分钟过期）
+ */
+const duplicateCheckCache = new Map();
+const DUPLICATE_CACHE_TTL = 5 * 60 * 1000; // 5 分钟
+const MAX_DUPLICATE_CACHE_SIZE = 50;
+
+/**
  * 从缓存获取分析结果
  */
 function getCachedAnalysis(cacheKey) {
@@ -73,6 +80,42 @@ function cacheAnalysisResult(cacheKey, data) {
 }
 
 /**
+ * 从缓存获取相似文档检测结果
+ */
+function getCachedDuplicateCheck(title, category) {
+  const cacheKey = `${category}:${title}`;
+  const cached = duplicateCheckCache.get(cacheKey);
+  
+  if (!cached) return null;
+  
+  // 检查是否过期
+  if (Date.now() - cached.timestamp > DUPLICATE_CACHE_TTL) {
+    duplicateCheckCache.delete(cacheKey);
+    return null;
+  }
+  
+  return cached.result;
+}
+
+/**
+ * 缓存相似文档检测结果
+ */
+function cacheDuplicateCheck(title, category, result) {
+  const cacheKey = `${category}:${title}`;
+  
+  // 如果缓存已满，删除最旧的条目
+  if (duplicateCheckCache.size >= MAX_DUPLICATE_CACHE_SIZE) {
+    const firstKey = duplicateCheckCache.keys().next().value;
+    duplicateCheckCache.delete(firstKey);
+  }
+  
+  duplicateCheckCache.set(cacheKey, {
+    result,
+    timestamp: Date.now()
+  });
+}
+
+/**
  * 执行知识提炼流程
  * 
  * @param {string} title - 知识卡片标题
@@ -100,29 +143,81 @@ function cacheAnalysisResult(cacheKey, data) {
 async function processExtraction({
   title,
   category,
+  customPath,
   conversationHistory,
   syncToSiYuan = true,
   forceNew = false,
   updateExisting = false,
   specifiedDocId = null,
   language,
-  analysisResult = null
+  analysisResult = null,
+  skipDuplicateCheck = false  // 新增：跳过相似文档检测
 }) {
   // 压缩风险检测
   const compressionRisk = await compressionDetector.detectRisk(conversationHistory);
+
+  // 方案 A：如果检测到高风险，提示用户
+  if (compressionRisk.riskLevel === 'critical') {
+    console.warn('[Compression] 检测到压缩风险：', compressionRisk.suggestion);
+    
+    // 返回警告给用户
+    return {
+      success: false,
+      action: 'compression_warning',
+      message: '⚠️ 检测到会话内容可能被压缩，提炼质量可能受影响',
+      compressionRisk: {
+        level: compressionRisk.riskLevel,
+        usageRate: compressionRisk.usageRate,
+        tokens: compressionRisk.tokens,
+        limit: compressionRisk.limit,
+        suggestion: compressionRisk.suggestion
+      },
+      options: [
+        {
+          label: '继续提炼',
+          description: '忽略警告，继续提炼知识',
+          action: 'continue'
+        },
+        {
+          label: '取消',
+          description: '取消提炼，检查会话内容',
+          action: 'cancel'
+        }
+      ]
+    };
+  }
 
   // 智能检测：是否应该更新已有文档
   let targetDocId = specifiedDocId;
   let shouldUpdate = false;
   let detectionResult = null;
 
-  if (!forceNew && !specifiedDocId) {
-    detectionResult = await smartDetector.shouldUpdateExisting(
-      title,
-      category,
-      conversationHistory,
-      retriever
-    );
+  // 优化：只在必要时检测，并使用缓存
+  if (!forceNew && !specifiedDocId && !skipDuplicateCheck) {
+    // 1. 检查缓存
+    const cachedResult = getCachedDuplicateCheck(title, category);
+    
+    if (cachedResult) {
+      console.log('[DuplicateCheck] 使用缓存的检测结果');
+      detectionResult = cachedResult;
+    } else {
+      // 2. 执行检测
+      console.log('[DuplicateCheck] 执行相似文档检测...');
+      const startTime = Date.now();
+      
+      detectionResult = await smartDetector.shouldUpdateExisting(
+        title,
+        category,
+        conversationHistory,
+        retriever
+      );
+      
+      const duration = Date.now() - startTime;
+      console.log(`[DuplicateCheck] 检测完成，耗时 ${duration}ms`);
+      
+      // 3. 缓存结果
+      cacheDuplicateCheck(title, category, detectionResult);
+    }
 
     if (detectionResult.action === 'auto_update' || updateExisting) {
       shouldUpdate = true;
@@ -144,11 +239,15 @@ async function processExtraction({
   }
 
   // 提炼知识（支持多语言）
+  // 提取 AI 关键词（如果有）
+  const aiKeywords = analysisResult?.data?.topics?.[0]?.keywords || [];
+  
   const knowledgeCard = await extractor.extractCurrentConversation({
     title,
     category,
     conversationHistory,
-    language
+    language,
+    aiKeywords  // 传递 AI 提取的关键词
   });
 
   // 同步到思源笔记
@@ -162,8 +261,8 @@ async function processExtraction({
           knowledgeCard.content
         );
       } else {
-        // 创建新文档
-        syncResult = await siyuanSync.syncToNotebook(knowledgeCard);
+        // 创建新文档（支持自定义路径）
+        syncResult = await siyuanSync.syncToNotebook(knowledgeCard, customPath);
       }
     } catch (syncError) {
       console.error('思源笔记同步失败，但本地备份已保存:', syncError);
@@ -255,11 +354,22 @@ export default {
             enum: ["架构", "模块", "规范", "问题", "决策", "教程"],
             required: true
           },
+          customPath: {
+            type: "string",
+            description: "自定义路径（支持多层级，如：/项目A/模块B/功能C），不指定则使用默认 /分类/标题",
+            required: false
+          },
           syncToSiYuan: {
             type: "boolean",
             description: "是否同步到思源笔记（默认：true）/ Sync to SiYuan Notes",
             required: false,
             default: true
+          },
+          skipDuplicateCheck: {
+            type: "boolean",
+            description: "跳过相似文档检测（提升性能，默认：false）/ Skip duplicate check",
+            required: false,
+            default: false
           },
           language: {
             type: "string",
@@ -273,12 +383,14 @@ export default {
             const { 
               title, 
               category, 
+              customPath,
               syncToSiYuan = true,
+              skipDuplicateCheck = false,  // 新增：跳过相似文档检测
               forceNew = false,
               updateExisting = false,
               docId: specifiedDocId,
               language,
-              smart = false  // 智能模式参数
+              smart = false
             } = args;
             
             // 获取会话历史（从 OpenClaw 上下文）
@@ -394,8 +506,10 @@ export default {
               return await processExtraction({
                 title: autoTitle,
                 category: autoCategory,
+                customPath,
                 conversationHistory,
                 syncToSiYuan,
+                skipDuplicateCheck,
                 forceNew,
                 updateExisting,
                 specifiedDocId,
@@ -408,8 +522,10 @@ export default {
             return await processExtraction({
               title,
               category,
+              customPath,
               conversationHistory,
               syncToSiYuan,
+              skipDuplicateCheck,
               forceNew,
               updateExisting,
               specifiedDocId,
@@ -438,11 +554,17 @@ export default {
             type: "string",
             description: "分析结果的缓存键 / Cache key for analysis results",
             required: true
+          },
+          skipDuplicateCheck: {
+            type: "boolean",
+            description: "跳过相似文档检测（批量提炼时推荐，默认：true）/ Skip duplicate check",
+            required: false,
+            default: true
           }
         },
         execute: async (toolCallId, args) => {
           try {
-            const { analysisCacheKey } = args;
+            const { analysisCacheKey, skipDuplicateCheck = true } = args;  // 默认跳过
             
             // 从缓存获取分析结果
             const cachedData = getCachedAnalysis(analysisCacheKey);
@@ -469,17 +591,15 @@ export default {
               const topicTitle = topic.titleSuggestions?.[0] || '未命名知识';
               const topicCategory = topic.category || '架构';
               
-              // 执行提炼
+              // 执行提炼（批量提炼时跳过相似文档检测）
               return await processExtraction({
                 title: topicTitle,
                 category: topicCategory,
                 conversationHistory: topicHistory,
                 syncToSiYuan: true,
-                forceNew: true,  // 多话题时强制创建新文档
-                updateExisting: false,
-                specifiedDocId: null,
-                language: language,
-                analysisResult: null
+                skipDuplicateCheck,  // 传递参数
+                language,
+                analysisResult: { data: { topics: [topic] } }
               });
             });
             
