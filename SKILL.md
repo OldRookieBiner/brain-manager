@@ -1,9 +1,9 @@
 ---
 name: brain
-description: OpenClaw 大脑管家 - 自动提炼会话内容、同步思源笔记、智能检索知识库
-version: 1.0.0
-author: OpenClaw Community
-keywords: 大脑，知识管理，思源笔记，会话总结，知识库，提炼，检索，AI 助手
+description: OpenClaw 智能大脑管家 - AI 自动分析会话、智能提炼知识、多话题并行处理
+version: 1.3.0
+author: OldRookieBiner
+keywords: 大脑，知识管理，思源笔记，会话总结，知识库，提炼，检索，AI 助手，智能模式，多话题
 ---
 
 # Brain Manager

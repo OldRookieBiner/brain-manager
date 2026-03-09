@@ -1,0 +1,39 @@
+{
+  "name": "brain",
+  "version": "1.3.0",
+  "description": "OpenClaw 智能大脑管家 - AI 自动分析会话、智能提炼知识、多话题并行处理",
+  "author": "OldRookieBiner",
+  "repository": "https://github.com/your-repo/brain-manager",
+  "license": "MIT",
+  "keywords": [
+    "大脑",
+    "知识管理",
+    "思源笔记",
+    "会话总结",
+    "知识库",
+    "提炼",
+    "检索",
+    "AI 助手",
+    "智能模式",
+    "多话题"
+  ],
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "main": "index.js",
+  "files": [
+    "index.js",
+    "lib/",
+    "SKILL.md",
+    "README.md",
+    "README_EN.md",
+    "CONFIG.md",
+    ".env.example"
+  ],
+  "clawhub": {
+    "category": "productivity",
+    "featured": true,
+    "screenshots": [],
+    "changelog": "https://github.com/your-repo/brain-manager/blob/main/README.md#-更新日志"
+  }
+}
